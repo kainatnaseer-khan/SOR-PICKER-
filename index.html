@@ -85,6 +85,7 @@ body.office .price{display:block}
 .locpill.on{background:#0b1b33;color:#f3c623;border-color:#0b1b33}
 .locpill.rs{background:#fef3c7;color:#92400e;border-color:#fde68a}
 .locpill.rs.on{background:#0b1b33;color:#f3c623;border-color:#0b1b33}
+.blockmsg{background:#fef2f2;border:2px solid #ef4444;color:#7f1d1d;border-radius:10px;padding:12px;margin-top:10px;font-size:14px;line-height:1.45}
 .dhelp{font-size:11.5px;color:#6b7280;margin:-2px 0 4px;line-height:1.4}
 .ddesc{border:2px solid #f3c623;background:#fffdf0;resize:vertical;min-height:84px;font-size:14px;line-height:1.4}
 .ddesc.need{border-color:#ef4444;background:#fff5f5}
@@ -233,6 +234,7 @@ tr.miss td{background:#fee2e2!important}
       <button class="btn bwa" onclick="shareWhatsApp()">📲 WhatsApp</button>
       <button class="btn bclear" onclick="clearAll()">✕ Clear</button>
     </div>
+    <div id="blockmsg"></div>
   </div>
 
 </div>
@@ -943,13 +945,16 @@ function checkReady(){
   if(needClient())return false;
   if(!gv('f-addr')){toast('Enter the property address');document.getElementById('f-addr').focus();return false;}
   if(!selected.length){toast('Add at least one code');return false;}
-  for(var i=0;i<selected.length;i++){
-    if(String(selected[i].notes||'').trim().length<MIN_DESC){
-      toast('Add a detailed description for '+selected[i].code+' — what was wrong and what you did');
-      var el=document.getElementById('notes-'+selected[i].id);if(el){el.classList.add('need');el.focus();if(el.scrollIntoView)el.scrollIntoView({block:'center'});}
-      return false;
-    }
+  var miss=selected.filter(function(x){return String(x.notes||'').trim().length<MIN_DESC;});
+  var bm=document.getElementById('blockmsg');
+  if(miss.length){
+    if(bm)bm.innerHTML='<div class="blockmsg">⚠️ <b>Not sent yet.</b> Write a detailed description (at least '+MIN_DESC+' letters) for: <b>'+miss.map(function(x){return esc(x.code);}).join(', ')+'</b><br>Say what was wrong and what you did — then press the button again.</div>';
+    toast('Add a description for '+miss[0].code+' first');
+    miss.forEach(function(x){var el=document.getElementById('notes-'+x.id);if(el)el.classList.add('need');});
+    var el=document.getElementById('notes-'+miss[0].id);if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
+    return false;
   }
+  if(bm)bm.innerHTML='';
   return true;
 }
 function saveJob(){flush();setTimeout(function(){
