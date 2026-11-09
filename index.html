@@ -154,6 +154,7 @@ tr.miss td{background:#fee2e2!important}
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn bwa" id="ready-share" style="font-size:15px;padding:14px" onclick="shareReady()">📤 Send file (WhatsApp, email…)</button>
       <button class="btn bdl" style="font-size:15px;padding:14px" onclick="saveReady()">⬇ Save to phone</button>
+      <div style="font-size:12px;color:#374151;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px;line-height:1.4;text-align:left"><b>iPhone:</b> send it with <b>📤 Send file</b> here. Don't open it in the Excel app to share — Excel asks you to sign in and the share fails.</div>
       <button class="btn bgrey" onclick="document.getElementById('ready').className='modal-bg'">Close</button>
     </div>
     <div style="font-size:12px;color:#6b7280;margin-top:10px;line-height:1.4">If nothing saves, use <b>Send file</b> — or open this page in Chrome / Safari.</div>
@@ -1159,12 +1160,16 @@ function fileName(job){
 }
 var XMIME='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 var READY=null; // {blob,name}
-function canShareFile(blob,name){
+// Some phones (older iPhones) refuse the Excel file type for sharing but accept it as a plain file.
+function shareType(blob,name){
   try{
-    if(!navigator.canShare||!window.File)return false;
-    return navigator.canShare({files:[new File([blob],name,{type:XMIME})]});
-  }catch(e){return false;}
+    if(!navigator.canShare||!window.File)return null;
+    var types=[XMIME,'application/octet-stream',''];
+    for(var i=0;i<types.length;i++){if(navigator.canShare({files:[new File([blob],name,{type:types[i]})]}))return types[i];}
+  }catch(e){}
+  return null;
 }
+function canShareFile(blob,name){return shareType(blob,name)!==null;}
 function saveBlob(blob,name){
   try{
     if(window.navigator&&navigator.msSaveOrOpenBlob){navigator.msSaveOrOpenBlob(blob,name);return true;}
@@ -1180,7 +1185,8 @@ function isTouch(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)|
 function saveReady(){if(READY&&saveBlob(READY.blob,READY.name))toast('Saving… check your Downloads / Files');}
 function shareReady(){
   if(!READY)return;
-  var f=new File([READY.blob],READY.name,{type:XMIME});
+  var t=shareType(READY.blob,READY.name);
+  var f=new File([READY.blob],READY.name,{type:t==null?XMIME:t});
   navigator.share({files:[f],title:READY.name}).then(function(){toast('Sent');}).catch(function(e){
     if(e&&e.name==='AbortError')return;
     toast('Sharing not available — tap Save to phone');
