@@ -85,6 +85,10 @@ body.office .price{display:block}
 .locpill.on{background:#0b1b33;color:#f3c623;border-color:#0b1b33}
 .locpill.rs{background:#fef3c7;color:#92400e;border-color:#fde68a}
 .locpill.rs.on{background:#0b1b33;color:#f3c623;border-color:#0b1b33}
+.dhelp{font-size:11.5px;color:#6b7280;margin:-2px 0 4px;line-height:1.4}
+.ddesc{border:2px solid #f3c623;background:#fffdf0;resize:vertical;min-height:84px;font-size:14px;line-height:1.4}
+.ddesc.need{border-color:#ef4444;background:#fff5f5}
+.dcount{font-size:11px;color:#b91c1c;margin-top:3px;font-weight:700}.dcount.ok{color:#15803d}
 .sinput{margin-top:4px;font-size:13px;padding:7px 10px}
 .officebar{display:none;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;padding:10px 12px;margin-top:6px;font-weight:700;color:#14532d;justify-content:space-between;align-items:center}
 body.office .officebar{display:flex}
@@ -205,7 +209,7 @@ tr.miss td{background:#fee2e2!important}
       <div id="dresults"></div>
     </div>
     <div class="pane on" id="pane-search">
-    <input type="text" id="searchbox" class="sbox" placeholder="Search: socket, fan, smoke, cooker, 861511…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="doSearch()">
+    <input type="text" id="searchbox" class="sbox" placeholder="Type what you did: rewire socket, smoke alarm, clean fan, 861511…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="doSearch()">
     <div class="chips" id="chips"></div>
     <div id="rlist"></div>
     <button class="linkbtn" onclick="toggleManual()">Can't find it? Add a code by number</button>
@@ -299,17 +303,21 @@ var CODES=[
 ['CCU','855527','CCU: Modify backboard'],
 ['CCU','855531','Arc protection: Install device'],
 ['CCU','855533','Surge protection: Install device'],
+['CCU','855523','CCU: Renew any size MCB / blank (missing blank in fuse board)'],
 ['CCU','855607','CCU: Renew 7-12 way metal clad unit'],
 ['CCU','855627','CCU: Renew 15 way moulded metalclad fixed busbar unit'],
 ['SWITCHES','861009','Switch: Renew 5A NE 3-gang plate and box'],
 ['SWITCHES','861011','Switch: Renew 5A NE 3-gang 2-way plate and box'],
 ['SWITCHES','861013','Switch: Renew ceiling pull switch'],
 ['SWITCHES','861015','Switch: Renew pull switch cord'],
+['SWITCHES','861005','Switch: Renew 5A NE 3-gang plate (front plate only)'],
+['SWITCHES','860503','Switch or outlet: Fix blank plate (blanking plate)'],
 ['SWITCHES','860501','Switch or outlet: Remove and refix (loose / refix)'],
 ['SOCKETS','861515','Socket: Install single 13A outlet plate and box'],
 ['SOCKETS','861505','Socket: Renew 13A single plate'],
 ['SOCKETS','861509','Socket: Renew single outlet plate and box'],
 ['SOCKETS','861511','Socket: Renew double outlet plate and box'],
+['SOCKETS','861507','Socket: Renew 13A double plate (front plate only)'],
 ['SOCKETS','861517','Socket: Install 13A double outlet plate and box'],
 ['SOCKETS','862005','Socket: Renew 13A DP plate with outlet (fused spur)'],
 ['SOCKETS','862007','Socket: Renew 13A DP plate with indicator'],
@@ -327,6 +335,8 @@ var CODES=[
 ['LIGHTS','856105','Light: Renew batten holder'],
 ['LIGHTS','856107','Lamp or batten holder: Remove and refix'],
 ['LIGHTS','856615','Bathroom light fitting: Renew with sealed unit'],
+['LIGHTS','856611','Light fitting: Renew 28W LV bulkhead type'],
+['LIGHTS','856613','Light fitting: Remove and refix any type (loose light)'],
 ['LIGHTS','856701','Light fitting: Remove and refix any internal type'],
 ['LIGHTS','858102','Light fitting: Renew single LED fluorescent and tube'],
 ['LIGHTS','858107','Light fitting: Remove refix any fluorescent type'],
@@ -335,12 +345,14 @@ var CODES=[
 ['LIGHTS','863007','Lamp: Renew shaver lamp'],
 ['EXTRACTOR FANS','841002','Fan (Envirovent): Renew 2-speed condensation control'],
 ['EXTRACTOR FANS','841007','Fan: Overhaul domestic extract (clean extractor fan)'],
+['EXTRACTOR FANS','840007','Fan: Renew single speed wall or duct fan'],
 ['EXTRACTOR FANS','841013','Fan: Install 2-speed condensation control kitchen'],
 ['EXTRACTOR FANS','841015','Fan: Install 2-speed condensation control in window'],
 ['EXTRACTOR FANS','840017','Fan: Renew circuit and outlet kitchen extractor hood'],
 ['SMOKE AND HEAT','872008','Smoke detector: Install mains optical type'],
 ['SMOKE AND HEAT','872020','Smoke detector: Renew with optical type'],
 ['SMOKE AND HEAT','872025','Smoke detector: Service and overhaul hard wire'],
+['SMOKE AND HEAT','872027','Smoke detector: Service and overhaul battery type'],
 ['SMOKE AND HEAT','872101','Heat detector: Install'],
 ['SMOKE AND HEAT','872105','Heat detector: Service and overhaul hard wire'],
 ['SMOKE AND HEAT','872201','Carbon monoxide detector: Install mains operated'],
@@ -348,6 +360,8 @@ var CODES=[
 ['ELECTRIC COOKERS','835005','Cooker control unit: Remove repair and refix'],
 ['ELECTRIC COOKERS','835007','Electric cooker: Renew circuit'],
 ['ELECTRIC COOKERS','835009','Electric cooker: Renew unit and circuit'],
+['ELECTRIC COOKERS','835003','Electric cooker: Reconnect and test (cooker cable)'],
+['ELECTRIC COOKERS','835011','Electric cooker: Renew control unit and switch (cooker switch)'],
 ['ELECTRIC COOKERS','835012','Electric cooker: Renew control unit socket and switch'],
 ['ELECTRIC COOKERS','835015','Electric cooker: Renew control plate'],
 ['ELECTRIC COOKERS','835019','Electric cooker: Renew cooker outlet plate'],
@@ -355,11 +369,63 @@ var CODES=[
 ['EARTHING','892027','Earth: Install earthbond complete'],
 ['EICR','896001','Test: Unoccupied property certificate EICR'],
 ['EICR','896003','Test: Unoccupied property report EICR'],
+['TESTING','882411','Domestic appliance: Annual test'],
+['TESTING','895501','Portable appliance: Annual test (PAT) — only item'],
+['DOOR BELL','870507','Door bell: Renew bell push'],
+['DOOR BELL','870511','Door bell: Renew battery type'],
+['REWIRE','DH0400','Dwelling: Full rewire (also invoiced as 000400) — PRE-AUTH NEEDED'],
 ['TRUNKING','851301','Trunking: Install NE 600mm mini PVC'],
 ['TRUNKING','851309','Trunking: Install NE 600mm mini UT'],
 ['TRUNKING','851513','Cable: Draw 1.5mm or 2.5mm PVC flat T and E per metre']
 ];
 var CODESET={}; CODES.forEach(function(x){CODESET[x[1]]=x;});
+
+// Words engineers actually type — so "rewire socket" or "smoke alarm" finds the right code.
+var KEYWORDS={
+'855013':'rewire socket new socket circuit run cable add socket socket rewire wire socket',
+'855010':'new spur rewire spur run cable spur','855019':'boiler spur fused spur boiler supply',
+'861511':'double socket twin socket replace socket broken socket cracked socket burnt','861509':'single socket replace socket broken socket',
+'861507':'double socket front plate faceplate only','861505':'single socket front plate faceplate only',
+'861517':'new double socket add socket install double','861515':'new single socket add socket install single',
+'861501':'back box backbox flush box loose socket box','861503':'surface box pattress box',
+'922001':'move socket relocate socket socket height lower socket raise socket',
+'860501':'loose socket loose switch refix secure off wall hanging','860503':'blank plate blanking plate cover plate',
+'861009':'light switch 1 gang 2 gang 3 gang switch replace switch broken switch','861005':'light switch front plate faceplate only',
+'861011':'two way switch 2 way switch landing hallway stairs','861013':'pull cord switch pull switch bathroom ceiling switch',
+'861015':'pull cord string cord','862004':'shower switch 45a pull cord shower isolator',
+'862005':'fused spur fcu switched spur spur plate','862007':'fused spur with neon indicator',
+'856103':'pendant ceiling rose lamp holder light pendant flex','856105':'batten holder',
+'856107':'loose pendant loose batten refix pendant','856611':'bulkhead outside light outdoor light 28w',
+'856613':'loose light fitting refix light','856615':'bathroom light sealed light ip65 bathroom fitting',
+'856701':'refix light fitting','858102':'kitchen light strip light fluorescent led batten tube light',
+'858107':'refix strip light loose fluorescent','858702':'bulb led bulb lamp light bulb',
+'858707':'gu10 bulb spotlight downlight bulb spot bulb','863007':'shaver light bulb',
+'841002':'replace extractor fan bathroom fan envirovent not working fan','841007':'clean fan dirty fan service fan extractor clean',
+'841013':'new extractor fan kitchen fan bathroom fan install fan','841015':'window fan extractor in window',
+'840007':'single speed fan replace wall fan duct fan','840017':'cooker hood extractor hood',
+'872008':'smoke alarm new smoke detector missing smoke alarm install smoke','872020':'replace smoke alarm expired smoke beeping smoke old smoke',
+'872025':'service smoke alarm test smoke hard wired smoke clean smoke','872027':'battery smoke alarm service battery smoke',
+'872101':'heat alarm heat detector kitchen heat new heat','872105':'service heat alarm test heat',
+'872201':'co alarm carbon monoxide co detector boiler alarm','835003':'reconnect cooker cooker cable connect cooker',
+'835011':'cooker switch replace cooker isolator','835012':'cooker switch with socket cooker control unit',
+'835015':'cooker plate cooker control plate','835019':'cooker outlet plate cooker connection',
+'835020':'move cooker switch hot zone relocate cooker','835005':'repair cooker switch',
+'835007':'cooker circuit rewire cooker','835009':'new cooker unit and circuit',
+'855511':'rcd test button rcd','855517':'rcbo breaker','855523':'mcb blank missing blank fuse board blank breaker',
+'855527':'fuse board modify backboard consumer unit tidy fusebox','855531':'afdd arc fault','855533':'spd surge',
+'855607':'new consumer unit fuse board replace ccu fusebox','855627':'15 way consumer unit',
+'855509':'meter tails rcd','855510':'meter tails new tails','892027':'earth bonding main bond gas water earth',
+'896001':'eicr certificate satisfactory test void cert','896003':'eicr report pir test inspection disposal',
+'882411':'appliance test cooker test','895501':'pat test portable appliance test',
+'870507':'bell push door bell button','870511':'door bell battery doorbell',
+'851309':'mini trunking cover cable trunking','851301':'mini trunking pvc','851513':'cable per metre draw cable twin and earth',
+'DH0400':'full rewire whole flat rewire 000400 complete rewire'
+};
+// How often each code has gone on our invoices (job + invoice trackers, Nov 2026) — drives the ⭐ Most used list.
+var USED={'896003':63,'858102':11,'856615':9,'858707':9,'860501':9,'872101':9,'855531':8,'855533':8,'855527':7,'861013':7,'DH0400':6,'856103':6,'872008':6,
+'841013':5,'856107':4,'861009':4,'872020':4,'872025':4,'872201':4,'841002':3,'851309':3,'835012':3,'896001':3,'835003':2,'841007':2,'855013':2,
+'860503':2,'861501':2,'861507':2,'861509':2,'861511':2,'862005':2,'872105':2,'882411':2,'841015':1,'855511':1,'855517':1,'855523':1,'855607':1,
+'856611':1,'856613':1,'858107':1,'858702':1,'861005':1,'861011':1,'861503':1,'861505':1,'862004':1,'835011':1,'835015':1,'840007':1,'870511':1,'872027':1,'895501':1};
 
 var LOCATIONS=['Bathroom','Bedroom 1','Bedroom 2','Bedroom 3','Kitchen','Living Room','Hallway','Staircase','WC','Entrance','Loft','Garage','Landing','Utility Room','Dining Room','Property'];
 var REASONS=['Expired','Broken','Cracked','Dirty / Hygiene','Replace','Install','Renew','Rewire','Not Working','Flickering','Missing','Damaged','Change','Beeping','No Power','Not Standard','Modify','Loose','Remove'];
@@ -667,34 +733,57 @@ function needClient(){
 
 // ── SEARCH ──────────────────────────────────────────────────────
 function renderChips(){
-  var cats=['ALL'];
+  var cats=['ALL','USED'];
   CODES.forEach(function(x){if(cats.indexOf(x[0])===-1)cats.push(x[0]);});
   document.getElementById('chips').innerHTML=cats.map(function(c){
-    return '<span class="chip'+(c===cat?' on':'')+'" onclick="setCat(\''+c+'\')">'+(c==='ALL'?'All':c.charAt(0)+c.slice(1).toLowerCase())+'</span>';
+    return '<span class="chip'+(c===cat?' on':'')+'" onclick="setCat(\''+c+'\')">'+(c==='ALL'?'All':c==='USED'?'⭐ Most used':c.charAt(0)+c.slice(1).toLowerCase())+'</span>';
   }).join('');
 }
 function setCat(c){cat=c;renderChips();doSearch();}
 function row(code,desc,sub){
   return '<div class="ri"><div class="rcode">'+esc(code)+'</div><div class="rdesc">'+esc(desc)+(sub?'<div class="rcat">'+esc(sub)+'</div>':'')+'</div><button class="addbtn" onclick="addCode(\''+esc(code)+'\')">+ Add</button></div>';
 }
+function hayOf(code){var x=CODESET[code];return ((x?x[0]+' '+x[2]:'')+' '+code+' '+(SOR[code]||'')+' '+(KEYWORDS[code]||'')).toLowerCase();}
 function doSearch(){
-  var q=gv('searchbox').toLowerCase();
+  var q=gv('searchbox').toLowerCase().trim();
   var box=document.getElementById('rlist');
-  var words=q.split(/\s+/).filter(Boolean);
-  function hit(s){s=s.toLowerCase();for(var i=0;i<words.length;i++)if(s.indexOf(words[i])===-1)return false;return true;}
-  var quick=CODES.filter(function(x){
-    if(!q)return cat==='ALL'||x[0]===cat;
-    return hit(x[0]+' '+x[1]+' '+x[2]+' '+(SOR[x[1]]||''));
+  // each typed word may match itself, or the trade word it stands for (alarm→smoke, fusebox→ccu, plug→socket …)
+  var words=q.split(/\s+/).filter(Boolean).map(function(w){
+    var alt=[w],c=Matcher.canon(w);c.forEach(function(x){if(x&&alt.indexOf(x)===-1)alt.push(x);});
+    if(w.length>3&&/s$/.test(w))alt.push(w.slice(0,-1));
+    return alt;
   });
-  var html=quick.map(function(x){return row(x[1],x[2],x[0]);}).join('');
+  function hit(s){for(var i=0;i<words.length;i++){var ok=false;for(var j=0;j<words[i].length;j++)if(s.indexOf(words[i][j])!==-1){ok=true;break;}if(!ok)return false;}return true;}
+  if(!q){
+    var list=cat==='USED'?Object.keys(USED).filter(function(k){return CODESET[k];}).sort(function(a,b){return USED[b]-USED[a];}).map(function(k){return CODESET[k];})
+                         :CODES.filter(function(x){return cat==='ALL'||x[0]===cat;});
+    box.innerHTML=list.map(function(x){return row(x[1],x[2],x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':''));}).join('');
+    return;
+  }
+  var shown={},html='';
+  // best matches: the same engine as "Describe it", so "rewire socket" → 855013, "smoke alarm expired" → 872020
+  if(/[a-z]/.test(q)&&q.length>=3){
+    var phrase=Object.keys(KEYWORDS).filter(function(k){return (' '+KEYWORDS[k]+' ').indexOf(' '+q+' ')!==-1;})
+      .sort(function(x,y){return (USED[y]||0)-(USED[x]||0);}).map(function(k){return {code:k};});
+    var eng=Matcher.suggest(q,SOR,SORL,CODESET).filter(function(x){return x.score>=6;})
+      .map(function(x){x.score+=Math.min(USED[x.code]||0,10)*0.8;return x;}).sort(function(x,y){return y.score-x.score;});
+    var seen={},sug=phrase.concat(eng).filter(function(x){if(seen[x.code])return false;seen[x.code]=1;return true;}).slice(0,3);
+    if(sug.length){
+      html+='<div class="subhead">Best match</div>'+sug.map(function(x,i){shown[x.code]=1;
+        return row(x.code,plainDesc(x.code),(CODESET[x.code]?CODESET[x.code][0]:'')+(i===0?' ★':''));}).join('');
+    }
+  }
+  var quick=CODES.filter(function(x){return !shown[x[1]]&&(cat==='ALL'||cat==='USED'||x[0]===cat)&&hit(hayOf(x[1]));})
+    .sort(function(a,b){return (USED[b[1]]||0)-(USED[a[1]]||0);});
+  if(quick.length){html+=(html?'<div class="subhead">Our codes</div>':'')+quick.map(function(x){shown[x[1]]=1;return row(x[1],x[2],x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':''));}).join('');}
   if(q.length>=2){
     var more=[];
-    for(var k in SOR){if(!CODESET[k]&&hit(k+' '+SOR[k])){more.push(k);if(more.length>=40)break;}}
+    for(var k in SOR){if(!shown[k]&&!CODESET[k]&&hit(k.toLowerCase()+' '+SOR[k].toLowerCase())){more.push(k);if(more.length>=40)break;}}
     if(more.length){
       html+='<div class="subhead">More SOR codes</div>'+more.map(function(k){return row(k,SOR[k],'');}).join('');
     }
   }
-  box.innerHTML=html||'<div class="empty">No codes found for "'+esc(q)+'" — try another word, or add the code by number below.</div>';
+  box.innerHTML=html||'<div class="empty">No codes found for "'+esc(q)+'" — try another word (socket, fan, smoke alarm, fuse board), use 💬 Describe it, or add the code by number below.</div>';
 }
 function toggleManual(){document.getElementById('manual').classList.toggle('on');}
 function manualLookup(){
@@ -815,12 +904,17 @@ function renderSelected(){
       '<input class="sinput" id="loc-'+id+'" value="'+esc(x.loc)+'" placeholder="Or type a location…" oninput="updField(\''+id+'\',\'loc\',this.value)">'+
       '<label class="lbl" style="margin-top:8px">Reason</label>'+pills(id,'reason',REASONS,'rs')+
       '<input class="sinput" id="rsn-'+id+'" value="'+esc(x.reason)+'" placeholder="Or type a reason…" oninput="updField(\''+id+'\',\'reason\',this.value)">'+
-      '<label class="lbl" style="margin-top:8px">Comments</label>'+
-      '<textarea id="notes-'+id+'" rows="2" placeholder="Type comments here…" oninput="updField(\''+id+'\',\'notes\',this.value)" onblur="updField(\''+id+'\',\'notes\',this.value)" style="border:2px solid #f3c623;background:#fffdf0;resize:vertical;min-height:48px;font-size:13px">'+esc(x.notes)+'</textarea>'+
+      '<label class="lbl" style="margin-top:8px">Detailed description of work <span class="req">*</span></label>'+
+      '<div class="dhelp">Say <b>what was wrong</b>, <b>what you did</b> and <b>what you fitted</b>. The office sends this to the client.</div>'+
+      '<textarea id="notes-'+id+'" class="ddesc'+(x.notes&&x.notes.trim().length>=MIN_DESC?'':' need')+'" rows="4" placeholder="e.g. Double socket in bedroom 1 cracked and scorched behind the bed. Isolated the circuit, replaced with new double socket and back box, tested — working OK." oninput="updField(\''+id+'\',\'notes\',this.value);descState(this)" onblur="updField(\''+id+'\',\'notes\',this.value)">'+esc(x.notes)+'</textarea>'+
+      '<div class="dcount'+(String(x.notes||'').trim().length>=MIN_DESC?' ok':'')+'" id="dc-'+id+'">'+descCount(x.notes)+'</div>'+
     '</div>';
   }).join('');
   updPrices();
 }
+var MIN_DESC=20;
+function descCount(t){var n=String(t||'').trim().length;return n>=MIN_DESC?'✓ Description added':'Write at least '+MIN_DESC+' characters ('+n+' so far)';}
+function descState(el){var ok=el.value.trim().length>=MIN_DESC;el.classList.toggle('need',!ok);var d=document.getElementById('dc-'+el.id.slice(6));if(d){d.textContent=descCount(el.value);d.classList.toggle('ok',ok);}}
 function updPrices(){
   if(!OFFICE)return;
   selected.forEach(function(x){
@@ -848,6 +942,13 @@ function checkReady(){
   if(needClient())return false;
   if(!gv('f-addr')){toast('Enter the property address');document.getElementById('f-addr').focus();return false;}
   if(!selected.length){toast('Add at least one code');return false;}
+  for(var i=0;i<selected.length;i++){
+    if(String(selected[i].notes||'').trim().length<MIN_DESC){
+      toast('Add a detailed description for '+selected[i].code+' — what was wrong and what you did');
+      var el=document.getElementById('notes-'+selected[i].id);if(el){el.classList.add('need');el.focus();if(el.scrollIntoView)el.scrollIntoView({block:'center'});}
+      return false;
+    }
+  }
   return true;
 }
 function saveJob(){flush();setTimeout(function(){
