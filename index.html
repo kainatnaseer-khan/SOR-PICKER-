@@ -73,6 +73,8 @@ input:focus,textarea:focus,select:focus{border-color:#0b1b33;outline:none}
 .tier.lo{background:#dc2626}.tier.hi{background:#1d4ed8}.tier.mid{background:#6b7280}
 .tlbl{display:block;font-size:10px;font-weight:700;margin-top:2px}
 .tlbl.lo{color:#dc2626}.tlbl.hi{color:#1d4ed8}.tlbl.mid{color:#6b7280}
+.ghead{font-size:12px;font-weight:700;color:#0b1b33;background:#eef2f7;border-radius:6px;padding:6px 8px;margin:12px 0 2px;display:flex;justify-content:space-between;gap:6px}
+.ghead span{font-weight:400;color:#6b7280;font-size:11px;white-space:nowrap}
 .legend{font-size:11px;color:#374151;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;margin-bottom:8px;line-height:1.5}
 .alts{font-size:11px;color:#374151;margin:-2px 0 8px 70px}
 .alts a{color:#1d4ed8;font-weight:700;cursor:pointer;text-decoration:underline}
@@ -330,6 +332,7 @@ var CODES=[
 ['SWITCHES','861005','Switch: Renew 5A NE 3-gang plate (front plate only)'],
 ['SWITCHES','860503','Switch or outlet: Fix blank plate (blanking plate)'],
 ['SWITCHES','860501','Switch or outlet: Remove and refix (loose / refix)'],
+['SWITCHES','860507','Switch or outlet: Secure loose plate (new screws only)'],
 ['SOCKETS','861515','Socket: Install single 13A outlet plate and box'],
 ['SOCKETS','861505','Socket: Renew 13A single plate'],
 ['SOCKETS','861509','Socket: Renew single outlet plate and box'],
@@ -402,6 +405,10 @@ var CODESET={}; CODES.forEach(function(x){CODESET[x[1]]=x;});
 // For jobs with more than one possible code: RED = pays less, BLUE = pays more, GREY = in between.
 // Only the order is stored here — never the prices.
 var TIERS={"872008":["lo","Smoke alarm",["872020"]],"872020":["hi","Smoke alarm",["872008"]],"855607":["lo","Consumer unit",["855627"]],"855627":["hi","Consumer unit",["855607"]],"855509":["hi","RCD",["855511"]],"855511":["lo","RCD",["855509"]],"861507":["lo","Double socket",["861511","861517","855013"]],"861511":["mid","Double socket",["861507","861517","855013"]],"861517":["mid","Double socket",["861507","861511","855013"]],"855013":["hi","Double socket",["861507","861511","861517"]],"861505":["lo","Single socket",["861509","861515"]],"861509":["hi","Single socket",["861505","861515"]],"861515":["mid","Single socket",["861505","861509"]],"862005":["hi","Fused spur plate",["862007"]],"862007":["lo","Fused spur plate",["862005"]],"855010":["hi","New spur / boiler outlet",["855019"]],"855019":["lo","New spur / boiler outlet",["855010"]],"861005":["lo","Light switch",["861009","861011"]],"861009":["mid","Light switch",["861005","861011"]],"861011":["hi","Light switch",["861005","861009"]],"861013":["hi","Pull switch",["861015"]],"861015":["lo","Pull switch",["861013"]],"860501":["hi","Loose switch / socket",["860507"]],"860507":["lo","Loose switch / socket",["860501"]],"856103":["hi","Pendant / batten",["856105"]],"856105":["lo","Pendant / batten",["856103"]],"858702":["lo","Lamp",["858707"]],"858707":["hi","Lamp",["858702"]],"856107":["lo","Loose light",["856613","856701"]],"856613":["hi","Loose light",["856107","856701"]],"856701":["mid","Loose light",["856107","856613"]],"840005":["mid","Fan (renew)",["840007","841002"]],"840007":["lo","Fan (renew)",["840005","841002"]],"841002":["hi","Fan (renew)",["840005","840007"]],"841013":["hi","Fan (install)",["841015"]],"841015":["lo","Fan (install)",["841013"]],"835011":["mid","Cooker switch",["835012","835015"]],"835012":["hi","Cooker switch",["835011","835015"]],"835015":["lo","Cooker switch",["835011","835012"]],"835007":["hi","Cooker circuit",["835009"]],"835009":["lo","Cooker circuit",["835007"]],"896001":["hi","Test / EICR",["896003"]],"896003":["lo","Test / EICR",["896001"]],"851301":["hi","Trunking",["851309"]],"851309":["lo","Trunking",["851301"]]};
+// Same-job groups, each listed cheapest → dearest. Used to keep similar work together in the code list.
+var GROUPS=[["Smoke alarm",["872008","872020"]],["Consumer unit",["855607","855627"]],["RCD",["855511","855509"]],["Double socket",["861507","861511","861517","855013"]],["Single socket",["861505","861515","861509"]],["Fused spur plate",["862007","862005"]],["New spur / boiler outlet",["855019","855010"]],["Light switch",["861005","861009","861011"]],["Pull switch",["861015","861013"]],["Loose switch / socket",["860507","860501"]],["Pendant / batten",["856105","856103"]],["Lamp",["858702","858707"]],["Loose light",["856107","856701","856613"]],["Fan (renew)",["840007","840005","841002"]],["Fan (install)",["841015","841013"]],["Cooker switch",["835015","835011","835012"]],["Cooker circuit",["835009","835007"]],["Test / EICR",["896003","896001"]],["Trunking",["851309","851301"]]];
+var ALSO_IN={SOCKETS:['860507','860501']};
+var GRANK={};GROUPS.forEach(function(g,gi){g[1].forEach(function(c,pos){GRANK[c]=[gi,pos];});});
 var TIER_TXT={lo:'pays less',hi:'pays more',mid:'in between'};
 function codeTag(code){var t=TIERS[code];return t?'<span class="tier '+t[0]+'">'+esc(code)+'</span>':esc(code);}
 function tierLbl(code){var t=TIERS[code];return t?'<span class="tlbl '+t[0]+'">'+(t[0]==='lo'?'🔴':t[0]==='hi'?'🔵':'⚪')+' '+TIER_TXT[t[0]]+' · '+esc(t[1])+'</span>':'';}
@@ -809,6 +816,31 @@ function setCat(c){cat=c;renderChips();doSearch();}
 function row(code,desc,sub){
   return '<div class="ri"><div class="rcode">'+codeTag(code)+'</div><div class="rdesc">'+esc(desc)+(sub?'<div class="rcat">'+esc(sub)+'</div>':'')+tierLbl(code)+'</div><button class="addbtn" onclick="addCode(\''+esc(code)+'\')">+ Add</button></div>';
 }
+// Lay out quick-list codes with the same job together, cheapest (red) → dearest (blue), under a heading.
+function groupedRows(list,subFn){
+  var catIdx={};CODES.forEach(function(x,i){if(!(x[0] in catIdx))catIdx[x[0]]=i;});
+  var codeIdx={};CODES.forEach(function(x,i){codeIdx[x[1]]=i;});
+  // a group sits where its first member appears in the category
+  function ix(x){return CODESET[x[1]][0]===x[0]?codeIdx[x[1]]:50000+codeIdx[x[1]];} // borrowed from another category → after its own jobs
+  var gFirst={};list.forEach(function(x){var g=GRANK[x[1]];if(g){var k=x[0]+'|'+g[0];if(!(k in gFirst)||ix(x)<gFirst[k])gFirst[k]=ix(x);}});
+  var keyed=list.map(function(x){
+    var g=GRANK[x[1]];
+    return {x:x,cat:catIdx[x[0]],pos:g?gFirst[x[0]+'|'+g[0]]:100000+codeIdx[x[1]],g:g?g[0]:-1,r:g?g[1]:0};
+  }).sort(function(a,b){return a.cat-b.cat||a.pos-b.pos||a.g-b.g||a.r-b.r;});
+  var html='',lastG=null,lastCat=null;
+  keyed.forEach(function(k){
+    var gkey=k.g>=0?k.x[0]+'|'+k.g:null;
+    if(gkey&&gkey!==lastG){
+      var n=keyed.filter(function(z){return z.g===k.g&&z.x[0]===k.x[0];}).length;
+      html+='<div class="ghead">'+esc(GROUPS[k.g][0])+(n>1?'<span>🔴 cheapest → 🔵 dearest</span>':'')+'</div>';
+    } else if(!gkey&&lastG&&k.x[0]===lastCat){
+      html+='<div class="ghead">Other '+esc(k.x[0].toLowerCase())+'</div>';
+    }
+    lastG=gkey;lastCat=k.x[0];
+    html+=row(k.x[1],k.x[2],subFn(k.x));
+  });
+  return html;
+}
 function hayOf(code){var x=CODESET[code];return ((x?x[0]+' '+x[2]:'')+' '+code+' '+(SOR[code]||'')+' '+(KEYWORDS[code]||'')).toLowerCase();}
 function doSearch(){
   var q=gv('searchbox').toLowerCase().trim();
@@ -824,7 +856,10 @@ function doSearch(){
   if(!q){
     var list=cat==='USED'?Object.keys(USED).filter(function(k){return CODESET[k];}).sort(function(a,b){return USED[b]-USED[a];}).map(function(k){return CODESET[k];})
                          :CODES.filter(function(x){return cat==='ALL'||x[0]===cat;});
-    box.innerHTML=LEG+list.map(function(x){return row(x[1],x[2],x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':''));}).join('');
+    // also show these jobs under another category where engineers look for them
+    if(cat!=='USED')Object.keys(ALSO_IN).forEach(function(c2){if(cat===c2||cat==='ALL')ALSO_IN[c2].forEach(function(code){if(CODESET[code]&&CODESET[code][0]!==c2)list.push([c2,code,CODESET[code][2]]);});});
+    var sub=function(x){return x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':'');};
+    box.innerHTML=LEG+(cat==='USED'?list.map(function(x){return row(x[1],x[2],sub(x));}).join(''):groupedRows(list,sub));
     return;
   }
   var shown={},html='';
@@ -842,7 +877,10 @@ function doSearch(){
   }
   var quick=CODES.filter(function(x){return !shown[x[1]]&&(cat==='ALL'||cat==='USED'||x[0]===cat)&&hit(hayOf(x[1]));})
     .sort(function(a,b){return (USED[b[1]]||0)-(USED[a[1]]||0);});
-  if(quick.length){html+=(html?'<div class="subhead">Our codes</div>':'')+quick.map(function(x){shown[x[1]]=1;return row(x[1],x[2],x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':''));}).join('');}
+  // bring the rest of each matched job's codes along, so the engineer sees cheap and dear side by side
+  var qset={};quick.forEach(function(x){qset[x[1]]=1;});
+  quick.slice().forEach(function(x){var g=GRANK[x[1]];if(g)GROUPS[g[0]][1].forEach(function(c){if(!qset[c]&&!shown[c]&&CODESET[c]){qset[c]=1;quick.push(CODESET[c]);}});});
+  if(quick.length){html+=(html?'<div class="subhead">Our codes</div>':'')+groupedRows(quick,function(x){return x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':'');});quick.forEach(function(x){shown[x[1]]=1;});}
   if(q.length>=2){
     var more=[];
     for(var k in SOR){if(!shown[k]&&!CODESET[k]&&hit(k.toLowerCase()+' '+SOR[k].toLowerCase())){more.push(k);if(more.length>=40)break;}}
