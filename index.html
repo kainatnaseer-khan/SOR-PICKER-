@@ -69,6 +69,20 @@ input:focus,textarea:focus,select:focus{border-color:#0b1b33;outline:none}
 .addbtn.done{background:#94a3b8}
 .empty{padding:16px;text-align:center;color:#9ca3af;font-size:14px}
 /* selected */
+.tier{display:inline-block;border-radius:4px;padding:1px 5px;color:#fff;font-weight:700}
+.tier.lo{background:#dc2626}.tier.hi{background:#1d4ed8}.tier.mid{background:#6b7280}
+.tlbl{display:block;font-size:10px;font-weight:700;margin-top:2px}
+.tlbl.lo{color:#dc2626}.tlbl.hi{color:#1d4ed8}.tlbl.mid{color:#6b7280}
+.legend{font-size:11px;color:#374151;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;margin-bottom:8px;line-height:1.5}
+.alts{font-size:11px;color:#374151;margin:-2px 0 8px 70px}
+.alts a{color:#1d4ed8;font-weight:700;cursor:pointer;text-decoration:underline}
+.remind{border:2px solid #f3c623;background:#fffbea;border-radius:12px;padding:12px;margin:10px 0}
+.remind .rt{font-weight:700;color:#0b1b33;font-size:14px}
+.remind .rs{font-size:12px;color:#6b7280;margin:2px 0 6px}
+.ritem{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f5e7a8}
+.ritem .rq{flex:1;font-size:13px;line-height:1.4}
+.ritem .rq small{display:block;color:#6b7280;font-size:11px}
+.rno{background:#e5e7eb;color:#374151;border:0;border-radius:8px;padding:9px 10px;font-size:12px;font-weight:700;cursor:pointer}
 .si{border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:8px;background:#fafafa}
 .shead{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
 .scode{font-weight:700;color:#0b1b33;font-size:13px;min-width:62px;flex-shrink:0}
@@ -383,6 +397,54 @@ var CODES=[
 ['TRUNKING','851513','Cable: Draw 1.5mm or 2.5mm PVC flat T and E per metre']
 ];
 var CODESET={}; CODES.forEach(function(x){CODESET[x[1]]=x;});
+
+// ── PAY COLOURS ─────────────────────────────────────────────────
+// For jobs with more than one possible code: RED = pays less, BLUE = pays more, GREY = in between.
+// Only the order is stored here — never the prices.
+var TIERS={"872008":["lo","Smoke alarm",["872020"]],"872020":["hi","Smoke alarm",["872008"]],"855607":["lo","Consumer unit",["855627"]],"855627":["hi","Consumer unit",["855607"]],"855509":["hi","RCD",["855511"]],"855511":["lo","RCD",["855509"]],"861507":["lo","Double socket",["861511","861517","855013"]],"861511":["mid","Double socket",["861507","861517","855013"]],"861517":["mid","Double socket",["861507","861511","855013"]],"855013":["hi","Double socket",["861507","861511","861517"]],"861505":["lo","Single socket",["861509","861515"]],"861509":["hi","Single socket",["861505","861515"]],"861515":["mid","Single socket",["861505","861509"]],"862005":["hi","Fused spur plate",["862007"]],"862007":["lo","Fused spur plate",["862005"]],"855010":["hi","New spur / boiler outlet",["855019"]],"855019":["lo","New spur / boiler outlet",["855010"]],"861005":["lo","Light switch",["861009","861011"]],"861009":["mid","Light switch",["861005","861011"]],"861011":["hi","Light switch",["861005","861009"]],"861013":["hi","Pull switch",["861015"]],"861015":["lo","Pull switch",["861013"]],"860501":["hi","Loose switch / socket",["860507"]],"860507":["lo","Loose switch / socket",["860501"]],"856103":["hi","Pendant / batten",["856105"]],"856105":["lo","Pendant / batten",["856103"]],"858702":["lo","Lamp",["858707"]],"858707":["hi","Lamp",["858702"]],"856107":["lo","Loose light",["856613","856701"]],"856613":["hi","Loose light",["856107","856701"]],"856701":["mid","Loose light",["856107","856613"]],"840005":["mid","Fan (renew)",["840007","841002"]],"840007":["lo","Fan (renew)",["840005","841002"]],"841002":["hi","Fan (renew)",["840005","840007"]],"841013":["hi","Fan (install)",["841015"]],"841015":["lo","Fan (install)",["841013"]],"835011":["mid","Cooker switch",["835012","835015"]],"835012":["hi","Cooker switch",["835011","835015"]],"835015":["lo","Cooker switch",["835011","835012"]],"835007":["hi","Cooker circuit",["835009"]],"835009":["lo","Cooker circuit",["835007"]],"896001":["hi","Test / EICR",["896003"]],"896003":["lo","Test / EICR",["896001"]],"851301":["hi","Trunking",["851309"]],"851309":["lo","Trunking",["851301"]]};
+var TIER_TXT={lo:'pays less',hi:'pays more',mid:'in between'};
+function codeTag(code){var t=TIERS[code];return t?'<span class="tier '+t[0]+'">'+esc(code)+'</span>':esc(code);}
+function tierLbl(code){var t=TIERS[code];return t?'<span class="tlbl '+t[0]+'">'+(t[0]==='lo'?'🔴':t[0]==='hi'?'🔵':'⚪')+' '+TIER_TXT[t[0]]+' · '+esc(t[1])+'</span>':'';}
+
+// ── "DID YOU ALSO DO…?" REMINDERS ───────────────────────────────
+// When a code is added, remind the engineer of work that usually goes with it, so nothing done on site is missed.
+// [codes that trigger it, code to suggest, question]
+var REMIND=[
+ [['855607','855627','DH0400'],'855527','Did you modify the backboard to fit the new board?'],
+ [['855607','855627','DH0400'],'855510','Did you fit new meter tails?'],
+ [['855607','855627','DH0400'],'855533','Did you fit a surge protection device (SPD)?'],
+ [['855607','855627','DH0400'],'892027','Did you install earth bonding (gas / water)?'],
+ [['855509','855511','855517','855531','855533','855523'],'855527','Did you modify the backboard?'],
+ [['855509','855511','855517'],'855523','Any missing blanks / MCBs in the board?'],
+ [['872008','872020'],'872101','Heat alarm in the kitchen — missing or expired?'],
+ [['872008','872020','872101'],'872201','CO alarm needed (gas boiler or fire)?'],
+ [['872101'],'872020','Smoke alarm in the hall / landing checked?'],
+ [['856103','856105'],'858702','New LED lamp in each rose / batten? (same qty)'],
+ [['858702','858707'],'856103','Was the rose / lampholder renewed too?'],
+ [['856615'],'861013','Bathroom pull switch renewed too?'],
+ [['861013'],'861015','Pull cord renewed?'],
+ [['861505','861507'],'861501','Back box broken too? (plate-only code used)'],
+ [['835020'],'922001','Any sockets too close to the cooker that were moved?'],
+ [['922001'],'835020','Cooker switch also in the hot zone and moved?'],
+ [['862004'],'830009','Shower reconnected and tested?'],
+ [['840005','840007','841002','841013','841015'],'841007','Any other fan in the flat cleaned / overhauled?'],
+ [['855001','855003','855010','855013','855019','835007','835009','DH0400'],'896001','Test certificate added for the new wiring?']
+];
+var REMIND_OFF={};
+function reminders(){
+  var have={};selected.forEach(function(x){have[x.code]=1;});
+  var out=[],seen={};
+  REMIND.forEach(function(r){
+    if(have[r[1]]||seen[r[1]]||REMIND_OFF[r[1]])return;
+    for(var i=0;i<r[0].length;i++)if(have[r[0][i]]){out.push({code:r[1],q:r[2]});seen[r[1]]=1;return;}
+  });
+  // a void/PIR job with several codes but no test or EICR yet
+  var test=['896001','896003','895001','895002','895003','896011'].some(function(c){return have[c];});
+  if(!test&&selected.length>=3&&!REMIND_OFF['896003'])out.push({code:'896003',q:'EICR / test report done for this property?'});
+  return out;
+}
+function remindAdd(code){var x=CODESET[code];pushCode(code,x?x[2]:officialDesc(code),x?x[0]:'OTHER');}
+function remindNo(code){captureAllNotes();REMIND_OFF[code]=1;renderSelected();}
 
 // Words engineers actually type — so "rewire socket" or "smoke alarm" finds the right code.
 var KEYWORDS={
@@ -745,12 +807,13 @@ function renderChips(){
 }
 function setCat(c){cat=c;renderChips();doSearch();}
 function row(code,desc,sub){
-  return '<div class="ri"><div class="rcode">'+esc(code)+'</div><div class="rdesc">'+esc(desc)+(sub?'<div class="rcat">'+esc(sub)+'</div>':'')+'</div><button class="addbtn" onclick="addCode(\''+esc(code)+'\')">+ Add</button></div>';
+  return '<div class="ri"><div class="rcode">'+codeTag(code)+'</div><div class="rdesc">'+esc(desc)+(sub?'<div class="rcat">'+esc(sub)+'</div>':'')+tierLbl(code)+'</div><button class="addbtn" onclick="addCode(\''+esc(code)+'\')">+ Add</button></div>';
 }
 function hayOf(code){var x=CODESET[code];return ((x?x[0]+' '+x[2]:'')+' '+code+' '+(SOR[code]||'')+' '+(KEYWORDS[code]||'')).toLowerCase();}
 function doSearch(){
   var q=gv('searchbox').toLowerCase().trim();
   var box=document.getElementById('rlist');
+  var LEG='<div class="legend"><span class="tier lo">RED</span> pays less &nbsp; <span class="tier hi">BLUE</span> pays more — when a job has more than one code. Always pick the code that matches the work you actually did.</div>';
   // each typed word may match itself, or the trade word it stands for (alarm→smoke, fusebox→ccu, plug→socket …)
   var words=q.split(/\s+/).filter(Boolean).map(function(w){
     var alt=[w],c=Matcher.canon(w);c.forEach(function(x){if(x&&alt.indexOf(x)===-1)alt.push(x);});
@@ -761,7 +824,7 @@ function doSearch(){
   if(!q){
     var list=cat==='USED'?Object.keys(USED).filter(function(k){return CODESET[k];}).sort(function(a,b){return USED[b]-USED[a];}).map(function(k){return CODESET[k];})
                          :CODES.filter(function(x){return cat==='ALL'||x[0]===cat;});
-    box.innerHTML=list.map(function(x){return row(x[1],x[2],x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':''));}).join('');
+    box.innerHTML=LEG+list.map(function(x){return row(x[1],x[2],x[0]+(USED[x[1]]?' · used '+USED[x[1]]+'×':''));}).join('');
     return;
   }
   var shown={},html='';
@@ -787,7 +850,7 @@ function doSearch(){
       html+='<div class="subhead">More SOR codes</div>'+more.map(function(k){return row(k,SOR[k],'');}).join('');
     }
   }
-  box.innerHTML=html||'<div class="empty">No codes found for "'+esc(q)+'" — try another word (socket, fan, smoke alarm, fuse board), use 💬 Describe it, or add the code by number below.</div>';
+  box.innerHTML=html?LEG+html:'<div class="empty">No codes found for "'+esc(q)+'" — try another word (socket, fan, smoke alarm, fuse board), use 💬 Describe it, or add the code by number below.</div>';
 }
 function toggleManual(){document.getElementById('manual').classList.toggle('on');}
 function manualLookup(){
@@ -827,8 +890,8 @@ function renderDescribe(){
     var meta='Qty '+t.qty+(t.locs.length?' · '+t.locs.join(', '):'');
     var rows=t.sug.length?t.sug.map(function(s,si){
       var done=t.added[s.code];
-      return '<div class="sug"><div class="rcode">'+esc(s.code)+'</div><div class="rdesc"><b>'+esc(plainDesc(s.code))+'</b>'+(si===0&&s.level==='best'?'<span class="best">Best match</span>':'')+
-        '<div class="rcat">'+esc(SOR[s.code]||'')+'</div></div>'+
+      return '<div class="sug"><div class="rcode">'+codeTag(s.code)+'</div><div class="rdesc"><b>'+esc(plainDesc(s.code))+'</b>'+(si===0&&s.level==='best'?'<span class="best">Best match</span>':'')+
+        '<div class="rcat">'+esc(SOR[s.code]||'')+'</div>'+tierLbl(s.code)+'</div>'+
         '<button class="addbtn'+(done?' done':'')+'" onclick="addSuggested('+ti+',\''+esc(s.code)+'\')">'+(done?'✓ Added':'+ Add')+'</button></div>';
     }).join(''):'<div class="empty" style="padding:8px">No match — try other words (e.g. socket, fan, smoke alarm), or use Search.</div>';
     return '<div class="task"><div class="tq">“'+esc(t.text)+'”</div><div class="tmeta">'+esc(meta)+'</div>'+rows+'</div>';
@@ -896,9 +959,10 @@ function renderSelected(){
   box.innerHTML=selected.map(function(x){
     var id=x.id;
     return '<div class="si">'+
-      '<div class="shead"><div class="scode">'+esc(x.code)+'</div>'+
-        '<div class="sdesc">'+esc(x.desc)+'</div>'+
+      '<div class="shead"><div class="scode">'+codeTag(x.code)+'</div>'+
+        '<div class="sdesc">'+esc(x.desc)+tierLbl(x.code)+'</div>'+
         '<button class="delbtn" onclick="removeCode(\''+id+'\')">✕</button></div>'+
+      (TIERS[x.code]?'<div class="alts">Other codes for this job: '+TIERS[x.code][2].map(function(o){return '<a onclick="swapCode(\''+id+'\',\''+o+'\')">'+codeTag(o)+'</a>';}).join(' ')+' — tap to swap</div>':'')+
       '<div class="qrow"><span class="lbl" style="margin:0">Qty</span>'+
         '<button class="qbtn" onclick="changeQty(\''+id+'\',-1)">−</button>'+
         '<input id="qty-'+id+'" type="number" min="1" inputmode="numeric" value="'+esc(x.qty)+'" oninput="updField(\''+id+'\',\'qty\',this.value)">'+
@@ -913,8 +977,19 @@ function renderSelected(){
       '<textarea id="notes-'+id+'" class="ddesc'+(x.notes&&x.notes.trim().length>=MIN_DESC?'':' need')+'" rows="4" placeholder="e.g. Double socket in bedroom 1 cracked and scorched behind the bed. Isolated the circuit, replaced with new double socket and back box, tested — working OK." oninput="updField(\''+id+'\',\'notes\',this.value);descState(this)" onblur="updField(\''+id+'\',\'notes\',this.value)">'+esc(x.notes)+'</textarea>'+
       '<div class="dcount'+(String(x.notes||'').trim().length>=MIN_DESC?' ok':'')+'" id="dc-'+id+'">'+descCount(x.notes)+'</div>'+
     '</div>';
-  }).join('');
+  }).join('')+remindHtml();
   updPrices();
+}
+function remindHtml(){
+  var r=reminders();if(!r.length)return '';
+  return '<div class="remind"><div class="rt">💡 Did you also do this?</div><div class="rs">Work that often goes with the codes above. Only add it if you actually did it — the office checks the photos.</div>'+
+    r.map(function(x){return '<div class="ritem"><div class="rcode">'+codeTag(x.code)+'</div><div class="rq">'+esc(x.q)+'<small>'+esc(plainDesc(x.code))+'</small></div>'+
+      '<button class="addbtn" onclick="remindAdd(\''+x.code+'\')">+ Yes</button><button class="rno" onclick="remindNo(\''+x.code+'\')">No</button></div>';}).join('')+'</div>';
+}
+function swapCode(id,code){
+  captureAllNotes();var s=findSel(id);if(!s)return;
+  s.code=code;s.desc=CODESET[code]?CODESET[code][2]:officialDesc(code);
+  renderSelected();toast('Changed to '+code);
 }
 var MIN_DESC=20;
 function descCount(t){var n=String(t||'').trim().length;return n>=MIN_DESC?'✓ Description added':'Write at least '+MIN_DESC+' characters ('+n+' so far)';}
@@ -1384,7 +1459,7 @@ function clearAll(silent){
   if(!silent&&(selected.length||gv('f-addr'))&&!confirm('Clear this job?'))return;
   ['f-addr','f-eng','f-notes','searchbox'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
-  selected=[];editId=null;client=null;cat='ALL';
+  selected=[];REMIND_OFF={};editId=null;client=null;cat='ALL';
   renderClients();renderChips();renderSelected();doSearch();
 }
 var UA=navigator.userAgent||'';
