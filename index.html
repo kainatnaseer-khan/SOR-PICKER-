@@ -109,6 +109,15 @@ body.office .price{display:block}
 .sinput{margin-top:4px;font-size:13px;padding:7px 10px}
 .officebar{display:none;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;padding:10px 12px;margin-top:6px;font-weight:700;color:#14532d;justify-content:space-between;align-items:center}
 body.office .officebar{display:flex}
+.satbar{display:none;border-radius:10px;padding:11px 12px;margin-top:8px;font-size:14px;line-height:1.4}
+.satbar.on{display:block}
+.satbar.ok{background:#dcfce7;border:2px solid #22c55e;color:#14532d}
+.satbar.no{background:#fef2f2;border:2px solid #ef4444;color:#7f1d1d}
+.bsat{background:#dcfce7;color:#14532d}.bunsat{background:#fee2e2;color:#991b1b}.bwait{background:#fef3c7;color:#92400e}
+.sfilt{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+@media(max-width:560px){.sfilt{grid-template-columns:1fr 1fr}.sfilt input{grid-column:1/-1}}
+.acts{font-size:11px;color:#6b7280;margin-top:4px}
+.fbstat{font-size:12px;color:#6b7280;margin-bottom:10px}
 .arow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .btn{border:0;border-radius:8px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .btn:active{opacity:.75}
@@ -177,6 +186,17 @@ tr.miss td{background:#fee2e2!important}
   </div>
 </div>
 
+<div class="modal-bg" id="satmodal" onclick="if(event.target===this)closeSat()">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:46px">⚠️</div>
+    <div style="font-weight:700;font-size:19px;color:#991b1b;margin:6px 0 8px">Property not satisfactory</div>
+    <div style="font-size:14px;line-height:1.55;color:#374151">Reminder: not much work has been recorded for this property.<br><b>Check the property again — is there anything else that needs doing?</b> If so, do it and add the codes.</div>
+    <div id="sat-office"></div>
+    <button class="btn bsave" style="width:100%;margin-top:16px;font-size:15px;padding:14px" onclick="closeSat()">↩ Go back and add more codes</button>
+    <button class="btn bgrey" style="width:100%;margin-top:8px;font-size:14px;padding:12px" onclick="satOverride()">✓ I've checked — nothing more to add, continue</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <div class="hdr">
@@ -191,6 +211,7 @@ tr.miss td{background:#fee2e2!important}
     <button class="tbtn on" data-tab="new" onclick="showTab('new')">New Job</button>
     <button class="tbtn" data-tab="jobs" onclick="showTab('jobs')">Saved Jobs</button>
     <button class="tbtn office" data-tab="price" onclick="showTab('price')">💷 Price a Sheet</button>
+    <button class="tbtn office" data-tab="all" onclick="showTab('all')">📥 All Engineers' Sheets</button>
   </div>
 </div>
 
@@ -208,7 +229,7 @@ tr.miss td{background:#fee2e2!important}
     <div class="ctitle">2 — Property Details</div>
     <div class="g2">
       <div class="full"><label class="lbl">Property Address <span class="req">*</span></label><input id="f-addr" placeholder="e.g. Flat 21, 45 Earls Court Square, London SW5 9BY"></div>
-      <div><label class="lbl">Engineer Name</label><input id="f-eng" placeholder="Your name"></div>
+      <div><label class="lbl">Engineer Name <span class="req">*</span></label><input id="f-eng" placeholder="Your name"></div>
       <div><label class="lbl">Date of Works</label><input id="f-date" type="date"></div>
       <div class="full"><label class="lbl">General Notes</label><textarea id="f-notes" rows="2" placeholder="Optional notes (not put in the Excel)"></textarea></div>
     </div>
@@ -244,6 +265,7 @@ tr.miss td{background:#fee2e2!important}
   <div class="card">
     <div class="ctitle">4 — Selected Codes <span class="cpill" id="cnt">0</span></div>
     <div id="slist"><div class="empty">No codes added yet.</div></div>
+    <div id="satbar" class="satbar"></div>
     <div class="officebar"><span id="ob-label">Office total</span><span id="ob-total">£0.00</span></div>
     <div class="arow">
       <button class="btn bdl" id="dlbtn" onclick="dlCurrent()">⬇ Download Excel</button>
@@ -281,6 +303,21 @@ tr.miss td{background:#fee2e2!important}
     <div class="tbl-wrap" id="ptable"></div>
     <div class="arow"><button class="btn bdl" onclick="dlPriced()">⬇ Download priced Excel</button></div>
   </div>
+</div>
+
+<!-- OFFICE: ALL ENGINEERS' SHEETS -->
+<div id="scr-all" class="scr">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div style="font-weight:700;font-size:16px;color:#0b1b33">All engineers' sheets</div>
+  </div>
+  <div class="fbstat" id="fbstat">Connecting…</div>
+  <div class="sfilt">
+    <input id="af-q" placeholder="Search address or code…" oninput="renderAll()">
+    <select id="af-client" onchange="renderAll()"><option value="">All clients</option></select>
+    <select id="af-eng" onchange="renderAll()"><option value="">All engineers</option></select>
+    <select id="af-sat" onchange="renderAll()"><option value="">Any status</option><option value="no">❌ Not satisfactory (all)</option><option value="conf">❌ Not satisfactory — engineer said nothing more</option><option value="yes">✅ Satisfactory</option></select>
+  </div>
+  <div id="alist"></div>
 </div>
 
 </div>
@@ -503,7 +540,7 @@ var USED={'896003':63,'858102':11,'856615':9,'858707':9,'860501':9,'872101':9,'8
 var LOCATIONS=['Bathroom','Bedroom 1','Bedroom 2','Bedroom 3','Kitchen','Living Room','Hallway','Staircase','WC','Entrance','Loft','Garage','Landing','Utility Room','Dining Room','Property'];
 var REASONS=['Expired','Broken','Cracked','Dirty / Hygiene','Replace','Install','Renew','Rewire','Not Working','Flickering','Missing','Damaged','Change','Beeping','No Power','Not Standard','Modify','Loose','Remove'];
 
-var selected=[], editId=null, client=null, cat='ALL';
+var selected=[], editId=null, curId=null, client=null, cat='ALL';
 
 // ── DESCRIBE-THE-JOB MATCHER ─────────────────────────────────────
 // Turns an engineer's plain-English description into ranked SOR code suggestions.
@@ -746,7 +783,7 @@ function setOffice(data){
   var lb=document.getElementById('lockbtn');
   lb.textContent=data?'🔓 Office':'🔒 Office';
   lb.className='lockbtn'+(data?' on':'');
-  if(!data&&document.getElementById('scr-price').classList.contains('on'))showTab('new');
+  if(!data&&(document.getElementById('scr-price').classList.contains('on')||document.getElementById('scr-all').classList.contains('on')))showTab('new');
   renderSelected();
   if(document.getElementById('scr-jobs').classList.contains('on'))renderJobs();
 }
@@ -1033,6 +1070,7 @@ var MIN_DESC=20;
 function descCount(t){var n=String(t||'').trim().length;return n>=MIN_DESC?'✓ Description added':'Write at least '+MIN_DESC+' characters ('+n+' so far)';}
 function descState(el){var ok=el.value.trim().length>=MIN_DESC;el.classList.toggle('need',!ok);var d=document.getElementById('dc-'+el.id.slice(6));if(d){d.textContent=descCount(el.value);d.classList.toggle('ok',ok);}}
 function updPrices(){
+  renderSat();
   if(!OFFICE)return;
   selected.forEach(function(x){
     var el=document.getElementById('pr-'+x.id);if(!el)return;
@@ -1045,10 +1083,140 @@ function updPrices(){
   document.getElementById('ob-total').textContent=client?money(t.total):'';
 }
 
+// ── £500 CHECK (Peabody + Morgan Sindall voids — not Disrepair) ─────
+// Engineers never see a price or a total — only "Satisfactory" / "Not satisfactory".
+var SAT_MIN=500, SAT_CLIENTS={peabody:1,morgan:1};
+var SAT=(function(s){var K=[0x5A3,0x1F7,0x2C9,0x7E1,0x33D],o={};s.split('|').forEach(function(p,i){var a=p.split(':');o[a[0]]=(parseInt(a[1],16)^(K[i%5]*7))/100;});return o;})('813006:33c0|813019:7bb|813021:1b94|813035:3fe6|813039:1161|814001:1449|814003:39b6|814005:2584|814007:d70|814051:a91f|814053:f0cd|814055:eb8f|814057:fd08|814059:cd2e|814101:7977|814103:5be5|814105:6fca|814107:7fbf|815001:376|815002:4d6d|815005:3e6b|815009:3718|815013:5355|815017:7dc8|815019:c6a|815020:2011|815021:117c|815025:bdd|815051:7950|815061:58a3|815063:a879|815065:319a|815067:6e20|817001:390c|817003:1f78|817007:227e|817011:a0b|817061:1ceb|819001:a2f|820003:49e|820007:3f83|820009:ac5|820011:173d|820013:30cb|820015:106a|820017:240c|820019:2692|820021:153f|820023:3d11|820025:10f1|825001:ad7|825003:ea25|825005:8577|825007:30e0|825009:245|826001:370c|827001:13db|830001:6369|830003:6377|830005:e69|830007:201f|830009:467|830011:3a6d|830013:3825|830015:de9e|830017:e417|830019:14b96|830021:99fd|830023:96a7|830025:7fb3|830027:58e6|830029:7f61|830031:9a64|835001:3590|835003:144e|835005:2a5b|835007:2771|835009:695|835011:3bbf|835012:1b6c|835013:37bf|835015:1b8|835019:10ed|835020:1420|836001:1e89|836003:1a0|836005:3dec|840005:3e02|840007:1f74|840015:1bf|840017:7cd|840019:b86|841002:46ae|841007:3043|841009:567f|841011:6a3c|841013:6a9d|841015:7693|841021:3029|841031:2e9|841101:feae|841102:f0cd|841103:11e74|841104:151b8|841105:1aca|841207:34d7|841209:559c|841211:5728|841213:796d|841215:6672|841217:5db9|841219:11049|841221:12521|841223:14ee4|842001:1577|850503:26c1|851003:f4c|851101:14a7|851103:3ec1|851201:10f0|851203:20b3|851301:e39|851303:1656|851309:3487|851311:13eb|851321:2e74|851331:719|851505:13b9|851507:37ce|851509:17e0|851513:278a|851515:c52|852003:139d|852005:3617|852007:172f|852009:2693|852013:cf6|852015:12e5|852017:354d|852509:13d3|852511:22ae|853009:e7b|853011:1762|853051:37fa|853501:1560|853505:2309|854501:17d8|854503:3561|854505:2112|854507:340a|854709:b86|855001:7deb|855003:9653|855004:a890|855005:74f2|855007:5229|855008:99e2|855009:c43|855010:13b3|855011:cec|855012:3aa6|855013:12a2|855015:85b|855017:2dc2|855019:861|855021:9065|855023:cd95|855025:aad3|855027:8f4e|855509:bb|855510:2f35|855511:1cc8|855513:1093|855514:3f1b|855516:1f1d|855517:3720|855518:545|855521:1070|855523:35ca|855525:cbb|855527:2b14|855531:2967|855533:61|855600:1e28|855601:3d8e|855603:1a71|855605:4499|855607:418f|855609:67c5|855611:71d8|855613:59a|855621:7478|855623:7c25|855625:a231|855627:8480|855629:8b1d|856103:8d4|856105:10cd|856107:3440|856603:1d73|856609:2aaa|856611:1c0d|856613:1458|856615:27e4|856617:1b4b|856619:2c34|856701:933|857002:1240|857003:352b|857004:14c1|857017:25e7|857019:f0b|857021:19aa|857101:2fb2|857103:efa|857105:6062|857107:443f|857109:25f|857111:2320|857113:121|857501:2277|858101:6d5|858102:1da0|858103:39b6|858104:1874|858107:24d7|858111:81d|858201:1c84|858301:3002|858303:1cc3|858501:26e9|858503:9a8|858701:1079|858702:368a|858707:14f5|858711:2697|860501:e6f|860503:1046|860505:32c3|860507:1644|861001:22b5|861003:ee5|861005:1065|861007:339a|861009:10ff|861011:20bd|861013:836|861015:12c3|861501:32e7|861503:15f4|861505:2336|861507:922|861509:1402|861511:3c25|861513:624|861515:2006|861517:6f5|861519:1a3b|862001:3034|862003:1e64|862004:2ec2|862005:8b6|862007:1636|862008:3038|862010:11d2|862012:225f|862014:888|862016:1791|862018:322b|863001:1f31|863003:35b6|863005:eb|863007:116d|870501:37ff|870503:136f|870505:2048|870507:9d9|870509:1541|870511:399d|870513:1ac9|871003:30d|871007:91|871009:1926|871010:3e19|871011:165e|871013:265b|871014:1edb|871101:1b99|871103:3c6b|871105:1ba8|871107:2ac4|871109:127|871111:1f99|871113:3bc1|871115:68a|871117:a972|871118:4ed2|871401:506c|871403:268b|871501:14a9|871503:227b|871505:63e|871507:ec|871509:2b4d|871513:3c51|871515:305d|871603:168e|872003:1f49|872008:2b00|872015:5574|872017:e8a|872020:2c30|872025:1410|872027:3048|872031:374f|872035:6dcb|872037:392c|872039:e56|872043:38bc|872045:5ba|872057:35e2|872101:2c24|872102:7d4|872103:1361|872105:11c4|872107:368f|872109:1f94|872201:37cf|872202:1302|872203:11c4|872205:2b2c|872207:2acb|872301:27d8|872303:75e|872502:9c1|872509:b9c|872513:342d|872515:2f30|872517:f1d|872519:527b|872521:7db4|872525:13f7|872526:3bc7|872527:234c|872901:103c|875504:197c|875602:4ff4|875604:3a97|875606:7425|875704:370e|880101:269b|880103:968|880105:1cd3|880107:3a95|880109:e2d|880111:3470|880112:1335|880113:334b|880114:2866|880115:1c22|880117:3346|880119:1836|880121:73b|880123:2b09|880125:1d0|880501:2524|880601:4f5|880602:1d96|880603:2384|880604:8a7|880611:a758|880613:b7a9|880811:36|880813:21c5|880815:ce7|881001:335c|881003:1acd|881004:1b14|881009:3de0|881021:36f5|881023:6b8|881025:12b8|882001:18eb|882011:2dd0|882021:4851|882023:c30|882025:533b|882031:1994|882032:324c|882033:fd2|882034:2175|882035:ec7|882036:165e|882037:158b|882038:198a|882051:5207|882121:533b|882123:4d85|882221:63df|882223:4851|882225:a723|882231:1d93|882232:1e9c|882233:33a5|882234:102b|882235:2d6b|882236:e3|882237:153a|882238:3d4e|882321:4851|882323:86c7|882411:968|882503:14f1|882505:204d|882507:3882|882523:39f7|882601:6269|882603:827b|885001:3eed|885003:1c15|885005:2dcb|889633:3c09|889635:34b2|889637:28a1|891001:1da4|891003:20a9|891005:1d3c|891007:1a91|891009:2554|891011:3a43|891013:3e52|892001:b02|892019:1b32|892023:285c|892025:1361|892027:180b|892050:14c|892107:1784|892109:358f|892111:14ff|895001:4a2|895002:19d8|895003:857|895007:34fb|895501:1355|895503:25f7|895505:c2d|895507:12f7|896001:1d9b|896003:983|896011:2ce1|897003:2cf8|898001:1521|898051:309f|898101:1202|898113:27a0|898201:e89|898301:139e|898303:366d|898305:17a5|898307:260a|898309:c70|898311:129d|898313:3533|898315:14ee|910001:2eec|910003:2e1a|910005:39c3|921001:255e|922001:766|923001:24a8|923003:22c|924001:1bc8|931001:7c13|931003:3c0a|931005:34a5|932001:2acc|932003:2ba1|932004:2cf2|DH0400:4fdaa|DH0401:38de9');
+function satApplies(cl){return !!SAT_CLIENTS[cl];}
+function satValue(codes){var t=0;(codes||[]).forEach(function(x){var r=SAT[String(x.code||'').toUpperCase()];if(r)t+=r*(parseFloat(x.qty)||0);});return Math.round(t*100)/100;}
+function satOk(codes,cl){return !satApplies(cl)||satValue(codes)>=SAT_MIN;}
+function satState(codes,cl){return satApplies(cl)?(satOk(codes,cl)?'yes':'no'):'n/a';}
+function satBadge(s,conf){return s==='yes'?'<span class="badge bsat">✅ Satisfactory</span>':s==='no'?'<span class="badge bunsat">❌ Not satisfactory'+(conf?' — engineer checked, nothing more to add':'')+'</span>':'';}
+function renderSat(){
+  var el=document.getElementById('satbar');if(!el)return;
+  if(!satApplies(client)||!selected.length){el.className='satbar';el.innerHTML='';return;}
+  var ok=satOk(selected,client);
+  el.className='satbar on '+(ok?'ok':'no');
+  el.innerHTML=ok?'✅ <b>Satisfactory</b> — enough work recorded for this property.':'❌ <b>Not satisfactory yet</b> — check the property for more work and add the codes.';
+}
+var SAT_PENDING=null;
+// Runs fn only if the property is satisfactory. Otherwise shows the pop-up.
+var SAT_CONF=false; // true while saving/sending a sheet the engineer confirmed has nothing more to add
+function satGate(codes,cl,fn,confirmed){
+  SAT_CONF=false;
+  if(satOk(codes,cl)){fn();return;}
+  if(confirmed){SAT_CONF=true;try{fn();}finally{SAT_CONF=false;}return;}
+  SAT_PENDING=fn;
+  document.getElementById('sat-office').innerHTML=OFFICE?
+    '<div style="margin-top:12px;font-size:13px;background:#f1f5f9;border-radius:8px;padding:8px">Office: total '+money(satValue(codes))+' (reminder shows under '+money(SAT_MIN)+')</div>':'';
+  document.getElementById('satmodal').className='modal-bg on';
+}
+function closeSat(){document.getElementById('satmodal').className='modal-bg';SAT_PENDING=null;var b=document.getElementById('searchbox');if(b&&b.scrollIntoView)b.scrollIntoView({behavior:'smooth',block:'center'});}
+function satOverride(){var f=SAT_PENDING;SAT_PENDING=null;document.getElementById('satmodal').className='modal-bg';if(f){SAT_CONF=true;try{f();}finally{SAT_CONF=false;}}}
+
+// ── OFFICE RECORD: every sheet an engineer saves or sends goes to the office database ──
+// Same Firebase database as the job tracker and invoice tracker, stored under /sorsheets.
+// If there is no signal the sheet waits on the phone and is sent automatically later.
+var FB_CFG={apiKey:"AIzaSyDQu3EBjsp4pEBqLWu0gMjxFtqQRgkB3hw",authDomain:"leon-invoice-tracker.firebaseapp.com",
+  databaseURL:"https://leon-invoice-tracker-default-rtdb.europe-west1.firebasedatabase.app",projectId:"leon-invoice-tracker",
+  storageBucket:"leon-invoice-tracker.firebasestorage.app",messagingSenderId:"581901171052",appId:"1:581901171052:web:03e871c58de1c76d3fdb49"};
+var FB_SRC=['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'];
+var RT=null,FB_READY=false,FB_LOADING=null,OUTBOX_KEY='sor_outbox_v1',SHEETS=[],SHEETS_ON=false,SHEETS_ERR='';
+function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+function fbStart(){
+  if(FB_READY)return Promise.resolve(true);
+  if(FB_LOADING)return FB_LOADING;
+  FB_LOADING=FB_SRC.reduce(function(p,src){return p.then(function(){return loadScript(src);});},Promise.resolve()).then(function(){
+    var app=firebase.apps.length?firebase.app():firebase.initializeApp(FB_CFG);
+    RT=firebase.database();
+    var a=firebase.auth();
+    return (a.currentUser?Promise.resolve():a.signInAnonymously()).catch(function(){});
+  }).then(function(){FB_READY=true;return true;}).catch(function(e){console.warn('Office database not reachable',e);FB_LOADING=null;return false;});
+  return FB_LOADING;
+}
+function deviceId(){try{var d=localStorage.getItem('sor_device');if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem('sor_device',d);}return d;}catch(e){return 'unknown';}}
+function outbox(){try{return JSON.parse(localStorage.getItem(OUTBOX_KEY)||'{}');}catch(e){return {};}}
+function setOutbox(o){try{localStorage.setItem(OUTBOX_KEY,JSON.stringify(o));}catch(e){}}
+function recordSheet(job,how){
+  if(!job||!job.id)return;
+  var rec={id:job.id,client:job.client||'',addr:job.addr||'',eng:job.eng||'',date:job.date||'',notes:job.notes||'',
+    codes:(job.codes||[]).map(function(x){return {code:String(x.code||''),desc:x.desc||'',loc:x.loc||'',reason:x.reason||'',qty:parseFloat(x.qty)||1,notes:x.notes||''};}),
+    sat:satState(job.codes,job.client),satConf:!!(job.satConf||SAT_CONF),how:how,updated:Date.now(),device:deviceId()};
+  var o=outbox();o[rec.id]=rec;setOutbox(o);
+  flushOutbox();
+}
+function flushOutbox(){
+  var o=outbox(),ids=Object.keys(o);if(!ids.length)return;
+  if(!navigator.onLine&&navigator.onLine!==undefined)return;
+  fbStart().then(function(ok){
+    if(!ok)return;
+    ids.forEach(function(id){
+      var rec=o[id],upd={};
+      Object.keys(rec).forEach(function(k){upd[k]=rec[k];});
+      upd['acts/'+rec.how]=rec.updated;
+      RT.ref('sorsheets/'+id).update(upd).then(function(){
+        var cur=outbox();if(cur[id]&&cur[id].updated===rec.updated){delete cur[id];setOutbox(cur);}
+        if(document.getElementById('scr-jobs').classList.contains('on'))renderJobs();
+      }).catch(function(e){console.warn('Not sent to office yet',e);});
+    });
+  });
+}
+window.addEventListener('online',flushOutbox);
+setInterval(flushOutbox,60000);
+
+// Office: list of every engineer's sheet
+function watchSheets(){
+  if(SHEETS_ON)return;SHEETS_ON=true;
+  setFbStat('Connecting to the office database…');
+  fbStart().then(function(ok){
+    if(!ok){SHEETS_ON=false;setFbStat('⚠️ Could not reach the office database — check the internet and reopen this tab.');return;}
+    RT.ref('sorsheets').orderByChild('updated').limitToLast(1000).on('value',function(snap){
+      var v=snap.val()||{};SHEETS_ERR='';
+      SHEETS=Object.keys(v).map(function(k){var s=v[k]||{};s.id=k;if(s.codes&&!Array.isArray(s.codes))s.codes=Object.keys(s.codes).map(function(i){return s.codes[i];});s.codes=s.codes||[];return s;})
+        .sort(function(a,b){return (b.updated||0)-(a.updated||0);});
+      setFbStat('🟢 Live · '+SHEETS.length+' sheet'+(SHEETS.length===1?'':'s')+' · updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
+      renderAll();
+    },function(e){SHEETS_ON=false;SHEETS_ERR=String(e&&e.message||e);setFbStat('⚠️ No access to the office database. In Firebase → Realtime Database → Rules, allow read and write on <b>/sorsheets</b>.');});
+  });
+}
+function setFbStat(t){var el=document.getElementById('fbstat');if(el)el.innerHTML=t;}
+function fillSelect(id,vals,first){var el=document.getElementById(id);if(!el)return;var cur=el.value;el.innerHTML='<option value="">'+first+'</option>'+vals.map(function(v){return '<option value="'+esc(v[0])+'"'+(v[0]===cur?' selected':'')+'>'+esc(v[1])+'</option>';}).join('');}
+function renderAll(){
+  var box=document.getElementById('alist');if(!box)return;
+  var engs={};SHEETS.forEach(function(s){var e=String(s.eng||'').trim();if(e)engs[e.toUpperCase()]=1;});
+  fillSelect('af-client',Object.keys(CLIENTS).map(function(k){return [k,CLIENTS[k].name];}),'All clients');
+  fillSelect('af-eng',Object.keys(engs).sort().map(function(e){return [e,e];}),'All engineers');
+  var q=gv('af-q').toLowerCase(),fc=gv('af-client'),fe=gv('af-eng'),fs=gv('af-sat');
+  var list=SHEETS.filter(function(s){
+    if(fc&&s.client!==fc)return false;
+    if(fe&&String(s.eng||'').trim().toUpperCase()!==fe)return false;
+    if(fs==='conf'?!(satState(s.codes,s.client)==='no'&&s.satConf):(fs&&satState(s.codes,s.client)!==fs))return false;
+    if(q){var hay=(s.addr+' '+s.eng+' '+s.codes.map(function(x){return x.code;}).join(' ')).toLowerCase();if(hay.indexOf(q)===-1)return false;}
+    return true;
+  });
+  if(!list.length){box.innerHTML='<div class="empty">'+(SHEETS.length?'No sheets match these filters.':'No sheets yet — they appear here as soon as an engineer saves, downloads or WhatsApps one.')+'</div>';return;}
+  box.innerHTML=list.map(function(s){
+    var cl=s.client&&CLIENTS[s.client]?'<span class="badge bcl">'+CLIENTS[s.client].name+'</span>':'';
+    var t=s.client?jobTotal(s.codes,s.client):null;
+    var tot=OFFICE&&t?'<span class="badge btot">'+money(t.total)+(t.missing?' + '+t.missing+' unpriced':'')+'</span>':'';
+    var a=s.acts||{},acts=[];
+    if(a.save)acts.push('💾 saved');if(a.excel)acts.push('⬇ Excel');if(a.whatsapp)acts.push('📲 WhatsApp');
+    return '<div class="jcard"><div class="jaddr">'+esc(s.addr||'(no address)')+'</div>'+
+      '<div class="jmeta">'+(s.eng?'👷 '+esc(s.eng)+' · ':'👷 <i>no name</i> · ')+(fmtDate(s.date)||'')+'</div>'+
+      '<div style="margin-top:5px">'+cl+'<span class="badge bc">'+s.codes.length+' code'+(s.codes.length!==1?'s':'')+'</span>'+tot+satBadge(satState(s.codes,s.client),s.satConf)+'</div>'+
+      '<div class="acts">'+acts.join(' · ')+(s.updated?' — last '+new Date(s.updated).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</div>'+
+      '<div class="jaw"><button class="btn bview" onclick="viewSheet(\''+esc(s.id)+'\')">👁 View</button>'+
+      '<button class="btn bdl" onclick="dlSheet(\''+esc(s.id)+'\')">⬇ Priced Excel</button></div></div>';
+  }).join('');
+}
+function findSheet(id){for(var i=0;i<SHEETS.length;i++)if(SHEETS[i].id===id)return SHEETS[i];return null;}
+function viewSheet(id){var s=findSheet(id);if(s)viewJobObj(s);}
+function dlSheet(id){var s=findSheet(id);if(!s)return;if(!s.client||!CLIENTS[s.client]){toast('This sheet has no client');return;}downloadJob(JSON.parse(JSON.stringify(s)));}
+
 // ── JOBS ────────────────────────────────────────────────────────
 function getJobData(){
   captureAllNotes();
-  return {id:editId||('job'+Date.now()),savedAt:new Date().toISOString(),client:client,
+  return {id:editId||curId||(curId='job'+Date.now()),savedAt:new Date().toISOString(),client:client,
     addr:gv('f-addr'),eng:gv('f-eng'),date:gv('f-date'),notes:gv('f-notes'),
     codes:JSON.parse(JSON.stringify(selected))};
 }
@@ -1058,6 +1226,8 @@ function getJob(id){var j=loadJobs();for(var i=0;i<j.length;i++)if(j[i].id===id)
 function checkReady(){
   if(needClient())return false;
   if(!gv('f-addr')){toast('Enter the property address');document.getElementById('f-addr').focus();return false;}
+  if(!gv('f-eng')){toast('Enter your name — the office needs to know who did the job');document.getElementById('f-eng').focus();return false;}
+  try{localStorage.setItem('sor_eng',gv('f-eng'));}catch(e){}
   if(!selected.length){toast('Add at least one code');return false;}
   var miss=selected.filter(function(x){return String(x.notes||'').trim().length<MIN_DESC;});
   var bm=document.getElementById('blockmsg');
@@ -1074,16 +1244,20 @@ function checkReady(){
 function saveJob(){flush();setTimeout(function(){
   captureAllNotes();
   if(!checkReady())return;
-  var jobs=loadJobs(),job=getJobData(),found=false;
-  for(var i=0;i<jobs.length;i++)if(jobs[i].id===job.id){jobs[i]=job;found=true;break;}
-  if(!found)jobs.unshift(job);
-  saveJobs(jobs);
-  toast(editId?'Job updated!':'Job saved!');
-  editId=null;clearAll(true);
+  satGate(selected,client,function(){
+    var jobs=loadJobs(),job=getJobData(),found=false;
+    job.sat=satState(job.codes,job.client);job.satConf=SAT_CONF;
+    for(var i=0;i<jobs.length;i++)if(jobs[i].id===job.id){jobs[i]=job;found=true;break;}
+    if(!found)jobs.unshift(job);
+    saveJobs(jobs);
+    recordSheet(job,'save');
+    toast(editId?'Job updated!':'Job saved!');
+    editId=null;clearAll(true);
+  });
 },150);}
 
 function renderJobs(){
-  var jobs=loadJobs(),box=document.getElementById('jlist');
+  var jobs=loadJobs(),box=document.getElementById('jlist'),OB=outbox();
   if(!jobs.length){box.innerHTML='<div style="text-align:center;padding:40px 20px;color:#9ca3af"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-weight:700;font-size:16px">No saved jobs yet</div><div style="font-size:13px;margin-top:4px">Create a new job and tap Save.</div></div>';return;}
   box.innerHTML=jobs.map(function(j){
     var d=fmtDate(j.date)||new Date(j.savedAt).toLocaleDateString('en-GB');
@@ -1092,12 +1266,12 @@ function renderJobs(){
     if(OFFICE&&j.client){var t=jobTotal(j.codes,j.client);tot='<span class="badge btot">'+money(t.total)+(t.missing?' + '+t.missing+' unpriced':'')+'</span>';}
     return '<div class="jcard"><div class="jaddr">'+esc(j.addr)+'</div>'+
       '<div class="jmeta">'+(j.eng?esc(j.eng)+' · ':'')+d+'</div>'+
-      '<div style="margin-top:5px">'+cl+'<span class="badge bc">'+j.codes.length+' code'+(j.codes.length!==1?'s':'')+'</span>'+tot+'</div>'+
+      '<div style="margin-top:5px">'+cl+'<span class="badge bc">'+j.codes.length+' code'+(j.codes.length!==1?'s':'')+'</span>'+tot+satBadge(satState(j.codes,j.client),j.satConf)+(OB[j.id]?'<span class="badge bwait">⏳ Not sent to office yet — needs signal</span>':'')+'</div>'+
       '<div class="jaw">'+
         '<button class="btn bdl" onclick="dlJob(\''+j.id+'\')">⬇ Excel</button>'+
         '<button class="btn bview" onclick="viewJob(\''+j.id+'\')">👁 View</button>'+
         '<button class="btn bedit" onclick="editJob(\''+j.id+'\')">✏️ Edit</button>'+
-        '<button class="btn bwa" onclick="sendWhatsApp(getJob(\''+j.id+'\'))">📲 WA</button>'+
+        '<button class="btn bwa" onclick="waJob(\''+j.id+'\')">📲 WA</button>'+
         '<button class="btn bdel" onclick="delJob(\''+j.id+'\')">🗑</button>'+
       '</div></div>';
   }).join('');
@@ -1118,8 +1292,8 @@ function delJob(id){
   saveJobs(loadJobs().filter(function(j){return j.id!==id;}));
   renderJobs();toast('Deleted');
 }
-function viewJob(id){
-  var j=getJob(id);if(!j)return;
+function viewJob(id){var j=getJob(id);if(j)viewJobObj(j);}
+function viewJobObj(j){
   var off=!!(OFFICE&&j.client);
   var html='<div style="margin-bottom:12px;font-size:13px;color:#374151"><strong>'+esc(j.addr)+'</strong><br>'+
     (j.client&&CLIENTS[j.client]?CLIENTS[j.client].name+' · ':'')+(j.eng?esc(j.eng)+' · ':'')+(fmtDate(j.date)||'')+
@@ -1345,11 +1519,11 @@ function downloadJob(job){
     toast(priced?'Excel ready with prices — '+money(t.total)+(t.missing?' ('+t.missing+' unpriced)':''):'Excel ready');
   }).catch(function(e){console.error(e);toast('Download failed: '+e.message);});
 }
-function dlCurrent(){flush();setTimeout(function(){captureAllNotes();if(checkReady())downloadJob(getJobData());},150);}
+function dlCurrent(){flush();setTimeout(function(){captureAllNotes();if(checkReady())satGate(selected,client,function(){var j=getJobData();recordSheet(j,'excel');downloadJob(j);});},150);}
 function dlJob(id){
   var j=getJob(id);if(!j)return;
   if(!j.client||!CLIENTS[j.client]){editJob(id);return;}
-  downloadJob(j);
+  satGate(j.codes,j.client,function(){recordSheet(j,'excel');downloadJob(j);},j.satConf);
 }
 
 // ── OFFICE: PRICE AN ENGINEER'S SHEET ───────────────────────────
@@ -1466,7 +1640,8 @@ function dlPriced(){
 }
 
 // ── WHATSAPP ────────────────────────────────────────────────────
-function shareWhatsApp(){flush();setTimeout(function(){captureAllNotes();if(checkReady())sendWhatsApp(getJobData());},150);}
+function shareWhatsApp(){flush();setTimeout(function(){captureAllNotes();if(checkReady())satGate(selected,client,function(){var j=getJobData();recordSheet(j,'whatsapp');sendWhatsApp(j);});},150);}
+function waJob(id){var j=getJob(id);if(!j)return;if(!j.client||!CLIENTS[j.client]){editJob(id);return;}satGate(j.codes,j.client,function(){recordSheet(j,'whatsapp');sendWhatsApp(j);},j.satConf);}
 function sendWhatsApp(j){
   if(!j)return;
   var d=fmtDate(j.date)||new Date(j.savedAt||Date.now()).toLocaleDateString('en-GB');
@@ -1488,16 +1663,18 @@ function sendWhatsApp(j){
 
 // ── GENERAL ─────────────────────────────────────────────────────
 function showTab(name){
-  ['new','jobs','price'].forEach(function(n){document.getElementById('scr-'+n).className='scr'+(n===name?' on':'');});
+  ['new','jobs','price','all'].forEach(function(n){document.getElementById('scr-'+n).className='scr'+(n===name?' on':'');});
   var b=document.querySelectorAll('.tbtn');
-  for(var i=0;i<b.length;i++)b[i].className='tbtn'+(b[i].getAttribute('data-tab')===name?' on':'')+(b[i].getAttribute('data-tab')==='price'?' office':'');
+  for(var i=0;i<b.length;i++)b[i].className='tbtn'+(b[i].getAttribute('data-tab')===name?' on':'')+(/^(price|all)$/.test(b[i].getAttribute('data-tab'))?' office':'');
   if(name==='jobs')renderJobs();
+  if(name==='all'){watchSheets();renderAll();}
 }
 function clearAll(silent){
   if(!silent&&(selected.length||gv('f-addr'))&&!confirm('Clear this job?'))return;
-  ['f-addr','f-eng','f-notes','searchbox'].forEach(function(id){document.getElementById(id).value='';});
+  ['f-addr','f-notes','searchbox'].forEach(function(id){document.getElementById(id).value='';});
+  try{document.getElementById('f-eng').value=localStorage.getItem('sor_eng')||'';}catch(e){}
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
-  selected=[];REMIND_OFF={};editId=null;client=null;cat='ALL';
+  selected=[];REMIND_OFF={};editId=null;curId=null;client=null;cat='ALL';
   renderClients();renderChips();renderSelected();doSearch();
 }
 var UA=navigator.userAgent||'';
@@ -1520,7 +1697,9 @@ if(IN_APP){
 }
 
 document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+try{document.getElementById('f-eng').value=localStorage.getItem('sor_eng')||'';}catch(e){}
 renderClients();renderChips();doSearch();renderSelected();restoreOffice();
+setTimeout(flushOutbox,3000);
 </script>
 </body>
 </html>
